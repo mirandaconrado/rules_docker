@@ -18,7 +18,6 @@ The signature of this rule is compatible with go_binary.
 
 load(
     "//lang:image.bzl",
-    "dep_layer",
     "app_layer",
 )
 load(
@@ -82,11 +81,10 @@ def go_image(name, base=None, deps=[], layers=[], binary=None, **kwargs):
 
   base = base or DEFAULT_BASE
   for index, dep in enumerate(layers):
-    this_name = "%s.%d" % (name, index)
-    dep_layer(name=this_name, base=base, dep=dep)
-    base = this_name
+    base = app_layer(name="%s.%d" % (name, index), base=base, dep=dep)
+    base = app_layer(name="%s.%d-symlinks" % (name, index), base=base, dep=dep, binary=binary)
 
   visibility = kwargs.get('visibility', None)
   tags = kwargs.get('tags', None)
-  app_layer(name=name, base=base, binary=binary, lang_layers=layers,
+  app_layer(name=name, base=base, binary=binary,
             visibility=visibility, tags=tags)

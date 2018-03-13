@@ -617,7 +617,7 @@ container_import(
     layers = ["%s.tar.gz" % x for x in PAUSE_LAYERS],
 )
 
-load("//python:image.bzl", "py_image")
+load("//python:image.bzl", "py_image", "py_layer")
 
 py_library(
     name = "py_image_library",
@@ -639,6 +639,53 @@ py_image(
         ":py_image_library",
     ],
     main = "py_image.py",
+)
+
+load("@pip_deps//:requirements.bzl", "requirement")
+
+py_library(
+    name = "py_image_library_using_six",
+    srcs = ["py_image_library_using_six.py"],
+    deps = [requirement("six")],
+)
+
+py_library(
+    name = "py_image_complex_library",
+    srcs = ["py_image_complex_library.py"],
+    deps = [
+        ":py_image_library_using_six",
+        "//testdata/test:py_image_library_using_addict",
+    ],
+)
+
+py_layer(
+    name = "py_image_complex_filter_by_path",
+    deps = [":py_image_complex_library"],
+    filter = "//testdata/test",
+)
+
+py_layer(
+    name = "py_image_complex_filter_by_path_external_deps",
+    deps = [":py_image_complex_filter_by_path"],
+    filter = "@",
+)
+
+py_layer(
+    name = "py_image_complex_external_deps",
+    deps = [":py_image_complex_library"],
+    filter = "@",
+)
+
+py_image(
+    name = "py_image_complex",
+    srcs = ["py_image_complex.py"],
+    layers = [
+        ":py_image_complex_filter_by_path_external_deps", # addict
+        ":py_image_complex_external_deps", # six
+        ":py_image_complex_filter_by_path", # py_image_library_using_addict
+        ":py_image_complex_library", # py_image_complex_library + py_image_library_using_six
+    ],
+    main = "py_image_complex.py",
 )
 
 load("//python3:image.bzl", "py3_image")

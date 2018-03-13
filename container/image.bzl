@@ -207,6 +207,11 @@ def _impl(ctx, files=None, file_map=None, empty_files=None, empty_dirs=None,
   unzipped_layers = parent_parts.get("unzipped_layer", []) + [layer.unzipped_layer for layer in layers]
   layer_diff_ids = [layer.diff_id for layer in layers]
   diff_ids = parent_parts.get("diff_id", []) + layer_diff_ids
+  new_files = [f for f in file_map or []]
+  new_emptyfiles = empty_files or []
+  new_symlinks = [f for f in symlinks or []]
+  parent_transitive_files = parent_parts.get("transitive_files", depset())
+  transitive_files = depset(new_files + new_emptyfiles + new_symlinks, transitive=[parent_transitive_files])
 
   # Get the config for the base layer
   config_file = _get_base_config(ctx)
@@ -240,6 +245,9 @@ def _impl(ctx, files=None, file_map=None, empty_files=None, empty_dirs=None,
       # At the root of the chain, we support deriving from a tarball
       # base image.
       "legacy": parent_parts.get("legacy"),
+
+      # Keep track of all files/emptyfiles/symlinks that we have already added to the image layers.
+      "transitive_files": transitive_files,
   }
 
   # We support incrementally loading or assembling this single image
